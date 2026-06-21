@@ -1,0 +1,40 @@
+Step 2: Create your Custom 32K Context Model
+
+Now, let's create a custom model based on your downloaded qwen2.5-coder:7b that forces a 32k context window.
+
+    Open your terminal and create a temporary Modelfile template:
+    code Bash
+
+    cat <<EOF > ~/Modelfile
+    FROM qwen2.5-coder:7b
+    PARAMETER num_ctx 32768
+    EOF
+
+    Run the ollama command to compile this into a new model called qwen-coder-32k:
+    code Bash
+
+    ollama create qwen-coder-32k -f ~/Modelfile
+
+    Delete the temporary template file:
+    code Bash
+
+    rm ~/Modelfile
+
+You now have a custom model named qwen-coder-32k installed. Thanks to the compressed KV Cache (q4_0) you enabled in Step 1, this 32k memory window will fit comfortably inside your system memory without crashing.
+Step 3: Update your OpenCode Config to use the 32K Model
+
+Update your home.file block in home.nix to point to your new custom model name [1]:
+code Nix
+
+models = {
+            "qwen-coder-32k" = {
+              name = "Qwen 2.5 Coder (7B - 32K Context)";
+            };
+          };
+
+Apply the final update:
+code Bash
+
+home-manager switch
+
+When you open OpenCode Desktop now, you can select the Qwen 2.5 Coder (7B - 32K Context) option, giving you a massive coding memory window that utilizes compressed GPU acceleration [1].
