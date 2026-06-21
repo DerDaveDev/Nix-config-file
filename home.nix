@@ -36,19 +36,6 @@ in
   # This setting configures a variable called XDG_DATA_DIRS. This acts as a bridge, telling the OS to add nix .desktop files to the menu
   targets.genericLinux.enable = true;
 
-  # Bashrc overwrite
-  programs.bash = {
-    enable = true; # This tells Home Manager to manage your bashrc
-
-    shellAliases = {
-      # The alias name is update
-      update = "flatpak update && nix-channel --update && home-manager switch";
-
-      # Optional: A 'cleanup' alias to free up disk space
-      cleanup = "nix-collect-garbage --delete-old";
-    };
-  };
-
   # This value determines the Home Manager release that your configuration is
   # compatible with. This helps avoid breakage when a new Home Manager release
   # introduces backwards incompatible changes.
@@ -62,12 +49,17 @@ in
   # environment.
   home.packages = [
 
-    # Command line tools
+    # Commandline tools
     pkgs.javaPackages.compiler.openjdk17
+    pkgs.scrcpy
+    pkgs.ollama
+
+    pkgs.python313Packages.pillow
+    pkgs.python313Packages.numpy
 
     # GUI Apps
-    (wrapGL pkgs.vscode "code")
-    (wrapGL pkgs.antigravity "antigravity")
+    #(wrapGL pkgs.antigravity "antigravity")
+    (wrapGL pkgs.opencode-desktop "opencode-desktop")
 
   # # Adds the 'hello' command to your environment. It prints a friendly
     # # "Hello, world!" when run.
@@ -87,6 +79,9 @@ in
     # '')
   ];
 
+
+
+
   # Home Manager is pretty good at managing dotfiles. The primary way to manage
   # plain files is through 'home.file'.
   home.file = {
@@ -100,6 +95,30 @@ in
     #   org.gradle.console=verbose
     #   org.gradle.daemon.idletimeout=3600000
     # '';
+
+    ## Configure OpenCode to connect to local Ollama models
+    ".config/opencode/opencode.json".text = builtins.toJSON {
+      "$schema" = "https://opencode.ai/config.json";
+      provider = {
+        ollama = {
+          npm = "@ai-sdk/openai-compatible";
+          name = "Ollama (local)";
+          options = {
+            # Pointing to the translation layer is necessary for the SDK
+            baseURL = "http://127.0.0.1:11434/v1";
+          };
+          models = {
+            "qwen2.5-coder:3b" = {
+              name = "Qwen 2.5 Coder (3B)";
+            };
+            "qwen2.5-coder:7b" = {
+              name = "Qwen 2.5 Coder (7B)";
+            };
+          };
+        };
+      };
+    };
+
   };
 
   # Home Manager can also manage your environment variables through
@@ -124,4 +143,12 @@ in
 
   # Let Home Manager install and manage itself.
   programs.home-manager.enable = true;
+
+  #### Ollama Background Services
+  services.ollama = {
+    enable = true;
+    environmentVariables = {
+      HSA_OVERRIDE_GFX_VERSION = "10.3.0"; # This variable forces compatibility for the Steam Deck GPU
+    };
+  };
 }
